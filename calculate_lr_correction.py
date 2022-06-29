@@ -62,19 +62,32 @@ def save_to_csv(dE, dE_corrected, dft_functional, output=None):
 
 def main():
     parser = argparse.ArgumentParser("Program to plot the correction from the result of linear regression.")
-    parser.add_argument('-d', '--csv_directory', help="Directory where the Reactions_n.csv files are present",
-                        required=True)
-    parser.add_argument('-c', '--lr_coeff', help="CSV file that contains the coefficients from LR. Format: bonds,coeffs", required=True)
-    parser.add_argument('-f', '--dft_functional', help="Name of the csv function for which the LR was performed.",
-                        required=True)
-    parser.add_argument('-n', '--name', help="Name of this run. Output files will be generated based on this name.",
-                        required=True)
+    parser.add_argument(
+        '-csv_directory', '--csv_directory',
+        help="Directory where the Reactions_n.csv files are present",
+        required=True
+    )
+    parser.add_argument(
+        '-lr_coeff', '--lr_coeff',
+        help="CSV file that contains the coefficients from LR. Format: bonds,coeffs",
+        required=True
+    )
+    parser.add_argument(
+        '-dft_functional', '--dft_functional',
+        help="Name of the csv function for which the LR was performed.",
+        choices=["PBE", "B3LYP-D", "M06-2X", "GFNXTB"],
+        required=True
+    )
+    parser.add_argument(
+        '-name', '--name',
+        help="Name of this run. Output files will be generated based on this name.",
+        required=True
+    )
     args = parser.parse_args()
     output = args.name
     dft_functional = args.dft_functional
     csv_files = get_csv_files(args.csv_directory)
     bonds_lr_pd = pd.read_csv(args.lr_coeff, index_col=False)
-
     dE, dE_corrected = get_energy_data(csv_files, dft_functional, bonds_coeffs=dict(zip(bonds_lr_pd["bonds"], bonds_lr_pd["Coefficients"])))
     save_to_csv(dE, dE_corrected, dft_functional, output=output+".csv")
     pass
