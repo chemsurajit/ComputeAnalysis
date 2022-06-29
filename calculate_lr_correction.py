@@ -22,7 +22,7 @@ def get_energy_data(csv_files, dft_functional, bonds_coeffs_dict = None):
     """
     dE = []
     dE_corrected = []
-    reactantindex = []
+    reactindex = []
     pdtindex = []
     chunksize = 100000
     bonds_list = list(bonds_coeffs_dict.keys())
@@ -38,7 +38,7 @@ def get_energy_data(csv_files, dft_functional, bonds_coeffs_dict = None):
             df = df.loc[(df[bonds_list].abs().sum(axis=1) != 0)]
             dE_np = df.loc[:, ("G4MP2")] - df.loc[:, (dft_functional.upper())].to_numpy()
             dE += dE_np.to_list()
-            reactantindex += df["reactantindex"].to_list()
+            reactindex += df["reactindex"].to_list()
             pdtindex += df["pdtindex"].to_list()
             for bond, coef in bonds_coeffs_dict.items():
                 bond_value = df[bond].to_numpy()
@@ -46,7 +46,7 @@ def get_energy_data(csv_files, dft_functional, bonds_coeffs_dict = None):
             dE_corrected += dE_np.to_list()
             if nchunk%10 == 0:
                 print("Nchunk: ", nchunk)
-    return reactantindex, pdtindex, dE, dE_corrected
+    return reactindex, pdtindex, dE, dE_corrected
 
 
 def save_to_csv(dE, dE_corrected, reactindex, pdtindex, dft_functional, output=None):
