@@ -55,7 +55,7 @@ def save_to_csv(dE, dE_corrected, dft_functional, output=None):
     print("Writing energy correction data to csv file: ", output)
     with open(output, 'w') as fp:
         writer = csv.writer(fp)
-        writer.writerow(["dE" + str(dft_functional), "dE_corrected" + str(dft_functional)])
+        writer.writerow(["dE_" + str(dft_functional), "dE_corrected_" + str(dft_functional)])
         writer.writerows(zip(dE, dE_corrected))
     return
 
