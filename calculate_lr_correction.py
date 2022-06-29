@@ -88,7 +88,7 @@ def main():
     dft_functional = args.dft_functional
     csv_files = get_csv_files(args.csv_directory)
     bonds_lr_pd = pd.read_csv(args.lr_coeff, index_col=False)
-    dE, dE_corrected = get_energy_data(csv_files, dft_functional, bonds_coeffs=dict(zip(bonds_lr_pd["bonds"], bonds_lr_pd["Coefficients"])))
+    dE, dE_corrected = get_energy_data(csv_files, dft_functional, bonds_coeffs=dict(zip(bonds_lr_pd["bonds"], bonds_lr_pd["coefficients"])))
     save_to_csv(dE, dE_corrected, dft_functional, output=output+".csv")
     pass
 
