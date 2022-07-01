@@ -3,7 +3,7 @@ import csv
 import os
 import glob
 import pandas as pd
-
+import numpy as np
 
 def get_csv_files(csv_dir):
     """This function returns a list of csv files with matching pattern Reaction_*.csv."""
@@ -22,6 +22,7 @@ def get_energy_data(csv_files, dft_functional, bonds_coeffs_dict = None):
     """
     dE = []
     dE_corrected = []
+    total_dE_corr_np = np.array([])
     reactindex = []
     pdtindex = []
     chunksize = 100000
@@ -40,13 +41,21 @@ def get_energy_data(csv_files, dft_functional, bonds_coeffs_dict = None):
             dE += dE_np.to_list()
             reactindex += df["reactindex"].to_list()
             pdtindex += df["pdtindex"].to_list()
-            for bond, coef in bonds_coeffs_dict.items():
-                bond_value = df[bond].to_numpy()
-                dE_np -= coef * bond_value
-            dE_corrected += dE_np.to_list()
+            #for bond, coef in bonds_coeffs_dict.items():
+            #    bond_value = df[bond].to_numpy()
+            #    dE_np -= coef * bond_value
+            #dE_corrected += dE_np.to_list()
+            # the numpy way:
+            nbond_changes = df[bonds_list]
+            nbond_coeffs = np.array(bonds_coeffs_dict.values())
+            for_each_bonds = nbond_changes * nbond_coeffs
+            total_change = for_each_bonds.sum(axis=1)
+            dE_corrected_np = dE_np - total_change
+            total_dE_corr_np = np.append(total_dE_corr_np, dE_corrected_np)
+            #print("debug: ", len(dE_corrected), len(total_dE_corr_np))
             if nchunk%10 == 0:
                 print("Nchunk: ", nchunk)
-    return reactindex, pdtindex, dE, dE_corrected
+    return reactindex, pdtindex, dE, total_dE_corr_np
 
 
 def save_to_csv(dE, dE_corrected, reactindex, pdtindex, dft_functional, output=None):
@@ -54,7 +63,7 @@ def save_to_csv(dE, dE_corrected, reactindex, pdtindex, dft_functional, output=N
     with open(output, 'w') as fp:
         writer = csv.writer(fp)
         writer.writerow(["reactindex", "pdtindex", "dE_" + str(dft_functional), "dE_corrected_" + str(dft_functional)])
-        writer.writerows(zip(reactindex, pdtindex, dE, dE_corrected))
+        writer.writerows(zip(reactindex, pdtindex, dE, dE_corrected.tolist()))
     return
 
 
