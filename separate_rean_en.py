@@ -35,9 +35,10 @@ def get_csv_files(directory):
     """
     csv_files = []
     for files in os.listdir(directory):
-        if os.path.isfile(files):
-            if files.endswith(".csv"):
-                csv_files.append(files)
+        abs_filepath = os.path.abspath(files)
+        if os.path.isfile(abs_filepath):
+            if abs_filepath.endswith(".csv"):
+                csv_files.append(abs_filepath)
     return csv_files
 
 
