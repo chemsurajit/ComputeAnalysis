@@ -36,7 +36,7 @@ def get_csv_files(directory):
     print("csv files located in: ", directory)
     csv_files = []
     for files in os.listdir(directory):
-        abs_filepath = os.path.abspath(files)
+        abs_filepath = os.path.abspath(os.path.join(directory, files))
         if os.path.isfile(abs_filepath):
             if abs_filepath.endswith(".csv"):
                 csv_files.append(abs_filepath)
@@ -56,11 +56,12 @@ def save_reaction_energies(out_dir, csv_files, dft_functional_name):
     print("Now will save the energy values.")
     chunksize = 100000
     out_csv = os.path.join(out_dir, dft_functional_name+".csv")
+    print("output file name: ", out_csv)
     n = 0
     for csv_file in csv_files:
         print("CSV writing started with file: ", csv_file)
         for chunk in pd.read_csv(csv_file, usecols=column_names, chunksize=chunksize):
-            if chunk:
+            if not chunk.empty:
                 if n == 0:
                     chunk.to_csv(out_csv, mode="w", index=False)
                 else:
