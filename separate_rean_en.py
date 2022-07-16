@@ -33,6 +33,7 @@ def get_csv_files(directory):
     """
     Return a list of csv files with absolute path from the directory.
     """
+    print("csv files located in: ", directory)
     csv_files = []
     for files in os.listdir(directory):
         abs_filepath = os.path.abspath(files)
