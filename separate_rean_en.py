@@ -39,6 +39,8 @@ def get_csv_files(directory):
         if os.path.isfile(abs_filepath):
             if abs_filepath.endswith(".csv"):
                 csv_files.append(abs_filepath)
+    print("csv files:")
+    print(csv_files)
     return csv_files
 
 
@@ -49,6 +51,8 @@ def save_reaction_energies(out_dir, csv_files, dft_functional_name):
         column_names = [dft_functional_name + "_TZP", 
                     dft_functional_name+"_DZP", 
                     dft_functional_name+"_SZ"]
+    print("DFT functional name: ", dft_functional_name)
+    print("Now will save the energy values.")
     chunksize = 100000
     out_csv = os.path.join(out_dir, dft_functional_name+".csv")
     n = 0
