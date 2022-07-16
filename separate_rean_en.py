@@ -42,7 +42,10 @@ def get_csv_files(directory):
 
 
 def save_reaction_energies(out_dir, csv_files, dft_functional_name):
-    column_names = [dft_functional_name + "_TZP", 
+    if "G4MP2" in dft_functional_name:
+        column_names = ["G4MP2"]
+    else:
+        column_names = [dft_functional_name + "_TZP", 
                     dft_functional_name+"_DZP", 
                     dft_functional_name+"_SZ"]
     chunksize = 100000
