@@ -41,7 +41,7 @@ def get_csv_files(directory):
             if abs_filepath.endswith(".csv"):
                 csv_files.append(abs_filepath)
     print("csv files:")
-    print(csv_files)
+    print(*csv_files, sep='\n')
     return csv_files
 
 
@@ -70,6 +70,7 @@ def save_reaction_energies(out_dir, csv_files, dft_functional_name):
             if n%10 == 0:
                 print("Nchunk: ", n)
         print("Writing complete for: ", csv_file)
+    print("Writing all files complete.")
     return
 
 
@@ -78,6 +79,7 @@ def main():
     dft_functional_name = args.dft_functional
     csv_files = get_csv_files(args.csv_directory)
     save_reaction_energies(args.out_dir, csv_files, dft_functional_name)
+    print("All finished")
     return
 
 
