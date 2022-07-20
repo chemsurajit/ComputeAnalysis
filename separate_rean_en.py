@@ -140,7 +140,7 @@ def save_reaction_histogram(out_dir, csv_files, dft_functional_names):
     columns_to_read = []
     for functional in dft_functional_names:
         if functional.strip() == "GFNXTB":
-            columns_to_read.append(functional)
+            columns_to_read += [functional]
         else:
             columns_to_read += [functional+"_TZP", functional+"_DZP", functional+"_SZ"]
     print("The following columns will be analysed: ", *functional, sep="\n")
