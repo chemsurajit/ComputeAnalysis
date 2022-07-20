@@ -47,100 +47,104 @@ def get_csv_files(directory):
     return csv_files
 
 
-def save_to_txt_file(out_dir, csv_files, functional):
+def save_to_txt_file(out_dir, csv_files, columns_to_read):
     """
     This function save the numpy analysis to txt files based on the functional
     with the three bases (except gfnxtb)
     """
     nbins = 50
     chunksize = 1000000
-    print("Processing data for: %s" % functional)
-    if functional.strip() == "GFNXTB":
-        column_names = ["GFNXTB"]
-    else:
-        column_names = [
-            functional + "_SZ",
-            functional + "_DZP",
-            functional + "_TZP"
-        ]
-    min_tzp = np.inf
-    max_tzp = -np.inf
-    min_dzp = np.inf
-    max_dzp = -np.inf
-    min_sz = np.inf
-    max_sz = -np.inf
-    min_xtb = np.inf
-    max_xtb = -np.inf
+    gmin = {}
+    gmax = {}
+    for column in columns_to_read:
+        gmin[column] = np.inf
+        gmax[column] = -np.inf
+    gmin = pd.Series(gmin)
+    gmax = pd.Series(gmax)
     # first determine the max and min for all the bases or xtb
     for csv_file in csv_files:
         print("File started reading for min, max: ", csv_file)
         for chunk in pd.read_csv(csv_file, 
                                 chunksize=chunksize
                                 ):
-            if functional.strip() == "GFNXTB":
-                min_xtb = np.minimum(chunk[column_names].min(), min_xtb)
-                max_xtb = np.maximum(chunk[column_names].max(), max_xtb)
-            else:
-                min_tzp = np.minimum(chunk[functional + "_TZP"].min(), min_tzp)
-                max_tzp = np.maximum(chunk[functional + "_TZP"].max(), max_tzp)
-                min_dzp = np.minimum(chunk[functional + "_DZP"].min(), min_dzp)
-                max_dzp = np.maximum(chunk[functional + "_DZP"].max(), max_dzp)
-                min_sz = np.minimum(chunk[functional + "_SZ"].min(), min_sz)
-                max_sz = np.maximum(chunk[functional + "_SZ"].max(), max_sz)
+            min_chunk = chunk[columns_to_read].min()
+            max_chunk = chunk[columns_to_read].max()
+            gmin = np.minimum(min_chunk, gmin)
+            gmax = np.maximum(max_chunk, gmax)
         print("File reading complete.")
-    print("The min, max for TZP: " , min_tzp, max_tzp)
-    print("The min, max for DZP: ", min_dzp, max_dzp)
-    print("The min, max for SZ: ", min_sz, max_sz)
-    print("The min, max for XTB: ", min_xtb, max_xtb)
+    gmin = gmin.to_dict()
+    gmax = gmax.to_dict()
+    print("MINIMA:")
+    [print(k, ":", v) for k, v in gmin.items()]
+    print("MAXIMA:")
+    [print(k, ":", v) for k, v in gmax.items()]
     # now calculate the bins and counts.
-    if functional.strip() == "GFNXTB":
-        bin_edges_xtb = np.linspace(min_xtb, max_xtb, nbins+1)
-        count_xtb = np.zeros(nbins, np.int32)
-    else:
-        bin_edges_tzp = np.linspace(min_tzp, max_tzp, nbins+1)
-        count_tzp = np.zeros(nbins, np.int32)
-        bin_edges_dzp = np.linspace(min_dzp, max_dzp, nbins+1)
-        count_dzp = np.zeros(nbins, np.int32)
-        bin_edges_sz = np.linspace(min_sz, max_sz, nbins+1)
-        count_sz = np.zeros(nbins, np.int32)
+    bin_edges_dict = {}
+    counts_dict = {}
+    for column in columns_to_read:
+        bin_edges_dict[column] = np.linspace(gmin[column], gmax[column], nbins+1)
+        counts_dict[column] = np.zeros(nbins, np.int64)
+    print("Created the empty numpy arrays for the functionals.")
+    print("Now the counting part will be performed.")
     # calculate the bins
     for csv_file in csv_files:
         print("File started reading for hist count: ", csv_file)
+        nchunk = 0
         for chunk in pd.read_csv(csv_file, chunksize=chunksize):
-            if functional.strip() == "GFNXTB":
-                subtotal_xtb, e_xtb = np.histogram(Chunk[functional], bins=bin_edges_xtb)
-                count_xtb += subtotal_xtb
-            else:
-                subtotal_tzp, e_tzp = np.histogram(chunk[functional+"_TZP"], bins=bin_edges_tzp)
-                subtotal_dzp, e_dzp = np.histogram(chunk[functional+"_DZP"], bins=bin_edges_dzp)
-                subtotal_sz, e_sz = np.histogram(chunk[functional+"_SZ"], bins=bin_edges_sz)
-                count_tzp += subtotal_tzp
-                count_dzp += subtotal_dzp
-                count_sz += subtotal_sz
-        print("File reading complete.")
-    print("Histogram for all data complete.")
-    if functional.strip() == "GFNXTB":
-        np.savetxt(functional+"_counts.txt", count_xtb, fmt="%d")
-        np.savetxt(functional+"_binedges.txt", bin_edges_xtb, fmt="%f")
-    else:
-        np.savetxt(functional+"_counts_TZP.txt", count_tzp, fmt="%d")
-        np.savetxt(functional+"_binedges_TZP.txt", bin_edges_tzp, fmt="%f")
-        np.savetxt(functional+"_counts_DZP.txt", count_dzp, fmt="%d")
-        np.savetxt(functional+"_binedges_DZP.txt", bin_edges_dzp, fmt="%f")
-        np.savetxt(functional+"_counts_SZ.txt", count_sz, fmt="%d")
-        np.savetxt(functional+"_binedges_SZ.txt", bin_edges_sz, fmt="%f")
-    print("Histogram analysis complete for functional: ", functional)
+            selected_chunk = chunk[columns_to_read]
+            for column in columns_to_read:
+                subtotal_col, e_col = np.histogram(selected_chunk[column], bins=bin_edges_dict[column])
+                counts_dict[column] += subtotal_col
+            nchunk += 1
+            if nchunk % 10 == 0:
+                print("Nchunk read: ", nchunk)
+        print("Analysis complete for file: ", csv_file)
+    # Now saving the results to txt files
+    print("Now saving the results to txt files.")
+    for column in columns_to_read:
+        count_file = column + "_counts.txt"
+        binedges_file = column + "_binedges.txt"
+        np.savetxt(count_file, counts_dict[column], fmt="%d")
+        np.savetxt(binedges_file, bin_edges_dict[column], fmt="%f")
+    print("Saving file is completed.")
+    #         if functional.strip() == "GFNXTB":
+    #            subtotal_xtb, e_xtb = np.histogram(Chunk[functional], bins=bin_edges_xtb)
+    #            count_xtb += subtotal_xtb
+    #         else:
+    #            subtotal_tzp, e_tzp = np.histogram(chunk[functional+"_TZP"], bins=bin_edges_tzp)
+    #            subtotal_dzp, e_dzp = np.histogram(chunk[functional+"_DZP"], bins=bin_edges_dzp)
+    #            subtotal_sz, e_sz = np.histogram(chunk[functional+"_SZ"], bins=bin_edges_sz)
+    #            count_tzp += subtotal_tzp
+    #            count_dzp += subtotal_dzp
+    #            count_sz += subtotal_sz
+    #     print("File reading complete.")
+    # print("Histogram for all data complete.")
+    # if functional.strip() == "GFNXTB":
+    #     np.savetxt(functional+"_counts.txt", count_xtb, fmt="%d")
+    #     np.savetxt(functional+"_binedges.txt", bin_edges_xtb, fmt="%f")
+    # else:
+    #     np.savetxt(functional+"_counts_TZP.txt", count_tzp, fmt="%d")
+    #     np.savetxt(functional+"_binedges_TZP.txt", bin_edges_tzp, fmt="%f")
+    #     np.savetxt(functional+"_counts_DZP.txt", count_dzp, fmt="%d")
+    #     np.savetxt(functional+"_binedges_DZP.txt", bin_edges_dzp, fmt="%f")
+    #     np.savetxt(functional+"_counts_SZ.txt", count_sz, fmt="%d")
+    #     np.savetxt(functional+"_binedges_SZ.txt", bin_edges_sz, fmt="%f")
+    # print("Histogram analysis complete for functional: ", functional)
     return
 
 
 def save_reaction_histogram(out_dir, csv_files, dft_functional_names):
     """
-    This function will save the histogram analysis of the dft functionals names.
+    This is the main function which will save the histogram analysis of the dft functionals names.
     """
+    columns_to_read = []
     for functional in dft_functional_names:
-        print("Doing histogram for functional: ", functional)
-        save_to_txt_file(out_dir, csv_files, functional)
-        print("Saved histogram analysis for functional: ", functional)
+        if functional.strip() == "GFNXTB":
+            columns_to_read.append(functional)
+        else:
+            columns_to_read += [functional+"_TZP", functional+"_DZP", functional+"_SZ"]
+    print("The following columns will be analysed: ", *functional, sep="\n")
+    save_to_txt_file(out_dir, csv_files, columns_to_read)
     return
 
 
