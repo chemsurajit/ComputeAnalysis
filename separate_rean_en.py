@@ -143,7 +143,8 @@ def save_reaction_histogram(out_dir, csv_files, dft_functional_names):
             columns_to_read += [functional]
         else:
             columns_to_read += [functional+"_TZP", functional+"_DZP", functional+"_SZ"]
-    print("The following columns will be analysed: ", *functional, sep="\n")
+    print("The following columns will be analysed: ")
+    print(*columns_to_read, sep="\n")
     save_to_txt_file(out_dir, csv_files, columns_to_read)
     return
 
