@@ -22,6 +22,11 @@ def get_arguments():
         help="Directory where all the CSV files are saved."
     )
     parser.add_argument(
+        "-g4mp2", "--g4mp2",
+        action="store_true",
+        help="If the histogram for only the G4MP2 is need. Don't run for other functional."
+    )
+    parser.add_argument(
         "-out_dir", "--out_dir",
         type=str,
         required=False,
@@ -29,6 +34,45 @@ def get_arguments():
         help="Directory where the extracted energies will be saved."
     )
     return parser.parse_args()
+
+
+def save_reaction_histogram_g4mp2(out_dir, csv_files, nbins=None):
+    """
+    function which saves the histograms for the G4MP2 reaction energies from csv files.
+    The csv file needs to have a column name G4MP2
+    """
+    if nbins is None:
+        nbins = 50
+    chunksize = 1000000
+    gmin = np.inf
+    gmax = -np.inf
+    for csv_file in csv_files:
+        print("File started reading for min, max: ", csv_file)
+        for chunk in pd.read_csv(csv_file, chunksize=chunksize):
+            min_chunk = chunk["G4MP2"].min()
+            max_chunk = chunk["G4MP2"].max()
+            gmin = np.minimum(min_chunk, gmin)
+            gmax = np.maximum(max_chunk, gmax)
+        print("File reading complete")
+    print("min and max value of G4MP2:", gmin, gmax)
+    print("Now the counting part will be performed.")
+    bin_edges = np.linspace(gmin, gmax, nbins+1)
+    counts = np.linspace(nbins, np.int64)
+    for csv_file in csv_files:
+        nchunk = 0
+        for chunk in pd.read_csv(csv_file, chunksize=chunksize):
+            subtotal_count, e_col = np.histogram(chunk["G4MP2"], bins=bin_edges)
+            counts += subtotal_count
+            nchunk += 1
+            if nchunk%10 == 0:
+                print("Nchunk: ", nchunk)
+        print("File analysis complete")
+    print("Read all the csv files. Now save the data to txt file")
+    np.savetxt("G4MP2_counts.txt", counts, fmt="%d")
+    np.savetxt("G4MP2_binedges.txt", bin_edges, fmt="%f")
+    print("Saving file complete.")
+    print("Analysis complete.")
+    return
 
 
 def get_csv_files(directory):
@@ -47,12 +91,13 @@ def get_csv_files(directory):
     return csv_files
 
 
-def save_to_txt_file(out_dir, csv_files, columns_to_read):
+def save_to_txt_file(out_dir, csv_files, columns_to_read, nbins=None):
     """
     This function save the numpy analysis to txt files based on the functional
     with the three bases (except gfnxtb)
     """
-    nbins = 50
+    if nbins is None:
+        nbins = 50
     chunksize = 1000000
     gmin = {}
     gmax = {}
@@ -107,29 +152,6 @@ def save_to_txt_file(out_dir, csv_files, columns_to_read):
         np.savetxt(count_file, counts_dict[column], fmt="%d")
         np.savetxt(binedges_file, bin_edges_dict[column], fmt="%f")
     print("Saving file is completed.")
-    #         if functional.strip() == "GFNXTB":
-    #            subtotal_xtb, e_xtb = np.histogram(Chunk[functional], bins=bin_edges_xtb)
-    #            count_xtb += subtotal_xtb
-    #         else:
-    #            subtotal_tzp, e_tzp = np.histogram(chunk[functional+"_TZP"], bins=bin_edges_tzp)
-    #            subtotal_dzp, e_dzp = np.histogram(chunk[functional+"_DZP"], bins=bin_edges_dzp)
-    #            subtotal_sz, e_sz = np.histogram(chunk[functional+"_SZ"], bins=bin_edges_sz)
-    #            count_tzp += subtotal_tzp
-    #            count_dzp += subtotal_dzp
-    #            count_sz += subtotal_sz
-    #     print("File reading complete.")
-    # print("Histogram for all data complete.")
-    # if functional.strip() == "GFNXTB":
-    #     np.savetxt(functional+"_counts.txt", count_xtb, fmt="%d")
-    #     np.savetxt(functional+"_binedges.txt", bin_edges_xtb, fmt="%f")
-    # else:
-    #     np.savetxt(functional+"_counts_TZP.txt", count_tzp, fmt="%d")
-    #     np.savetxt(functional+"_binedges_TZP.txt", bin_edges_tzp, fmt="%f")
-    #     np.savetxt(functional+"_counts_DZP.txt", count_dzp, fmt="%d")
-    #     np.savetxt(functional+"_binedges_DZP.txt", bin_edges_dzp, fmt="%f")
-    #     np.savetxt(functional+"_counts_SZ.txt", count_sz, fmt="%d")
-    #     np.savetxt(functional+"_binedges_SZ.txt", bin_edges_sz, fmt="%f")
-    # print("Histogram analysis complete for functional: ", functional)
     return
 
 
@@ -150,10 +172,14 @@ def save_reaction_histogram(out_dir, csv_files, dft_functional_names):
 
 
 def main():
+    nbins = 50
     args = get_arguments()
     dft_functional_names = ["PBE", "BLYP", "BP", "TPSSH", "B3LYP(VWN5)", "M06-2X", "MPW1PW", "GFNXTB"]
     csv_files = get_csv_files(args.csv_directory)
-    save_reaction_histogram(args.out_dir, csv_files, dft_functional_names)
+    if args.g4mp2:
+        save_reaction_histogram_g4mp2(args.out_dir, csv_files, nbins=nbins)
+    else:
+        save_reaction_histogram(args.out_dir, csv_files, dft_functional_names, nbins=nbins)
     print("All finished")
     return
 
