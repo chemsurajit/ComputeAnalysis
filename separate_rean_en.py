@@ -60,7 +60,7 @@ def save_reaction_histogram_g4mp2(out_dir, csv_files, nbins=None):
     print("Total number of reactions: ", nreactions)
     print("Now the counting part will be performed.")
     bin_edges = np.linspace(gmin, gmax, nbins+1)
-    counts = np.linspace(nbins, np.int64)
+    counts = np.zeros(nbins, np.int64)
     for csv_file in csv_files:
         nchunk = 0
         for chunk in pd.read_csv(csv_file, chunksize=chunksize):
