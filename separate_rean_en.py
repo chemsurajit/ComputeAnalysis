@@ -46,15 +46,18 @@ def save_reaction_histogram_g4mp2(out_dir, csv_files, nbins=None):
     chunksize = 1000000
     gmin = np.inf
     gmax = -np.inf
+    nreactions = 0
     for csv_file in csv_files:
         print("File started reading for min, max: ", csv_file)
         for chunk in pd.read_csv(csv_file, chunksize=chunksize):
+            nreactions += len(chunk.index)
             min_chunk = chunk["G4MP2"].min()
             max_chunk = chunk["G4MP2"].max()
             gmin = np.minimum(min_chunk, gmin)
             gmax = np.maximum(max_chunk, gmax)
         print("File reading complete")
     print("min and max value of G4MP2:", gmin, gmax)
+    print("Total number of reactions: ", nreactions)
     print("Now the counting part will be performed.")
     bin_edges = np.linspace(gmin, gmax, nbins+1)
     counts = np.linspace(nbins, np.int64)
