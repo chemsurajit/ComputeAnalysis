@@ -52,7 +52,7 @@ def save_relative_csv_for_functionals(csv_files, g4mp2_csv, dft_functional_names
 def main():
     nbins = 50
     args = get_arguments()
-    csv_files = separate_rean_en.get_csv_files(args.csv_directory)
+    csv_files = separate_rean_en.get_csv_files(args.csv_dir)
     dft_functional_names = ["PBE_TZP", "PBE_DZP", "PBE_SZ", "B3LYP_TZP", "M06-2X_TZP", "GFNXTB"]
     if os.path.isfile(args.g4mp2_csv):
         save_relative_csv_for_functionals(csv_files, 
