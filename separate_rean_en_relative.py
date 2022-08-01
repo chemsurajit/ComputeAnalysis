@@ -36,7 +36,7 @@ def get_arguments():
 
 
 def save_relative_csv_for_functionals(csv_files, g4mp2_csv, dft_functional_names):
-    chunksize = 100000
+    chunksize = 10000
     for func in dft_functional_names:
         func_dfs = []
         for csv_file in csv_files:
