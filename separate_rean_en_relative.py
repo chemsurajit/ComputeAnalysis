@@ -20,10 +20,10 @@ def get_arguments():
         help="Directory where all the CSV files are saved."
     )
     parser.add_argument(
-        "-g4mp2_csv", "--g4mp2_csv",
+        "-g4mp2_dir", "--g4mp2_dir",
         required=False,
         default="./",
-        help="CSV where G4MP2 reaction energies are. Required only the -relative present."
+        help="CSV files where G4MP2 reaction energies are."
     )
     parser.add_argument(
         "-out_dir", "--out_dir",
@@ -35,7 +35,7 @@ def get_arguments():
     return parser.parse_args()
 
 
-def save_relative_csv_for_functionals(csv_files, g4mp2_csv, dft_functional_names):
+def save_relative_csv_for_functionals(csv_files, g4mp2_csv_files, dft_functional_names):
     chunksize = 10000
     for func in dft_functional_names:
         func_dfs = []
@@ -44,7 +44,7 @@ def save_relative_csv_for_functionals(csv_files, g4mp2_csv, dft_functional_names
                 func_dfs.append(chunk)
             break
         break
-    pd.concat(func_dfs).to_csv("test.csv")
+    pd.concat(func_dfs).to_csv("test.csv", index=false)
     return
 
 
@@ -53,10 +53,11 @@ def main():
     nbins = 50
     args = get_arguments()
     csv_files = separate_rean_en.get_csv_files(args.csv_dir)
+    g4mp2_csv_files = separate_rean_en.get_csv_files(args.g4mp2_dir)
     dft_functional_names = ["PBE_TZP", "PBE_DZP", "PBE_SZ", "B3LYP_TZP", "M06-2X_TZP", "GFNXTB"]
     if os.path.isfile(args.g4mp2_csv):
         save_relative_csv_for_functionals(csv_files, 
-                                          args.g4mp2_csv, 
+                                          g4mp2_csv_files, 
                                           dft_functional_names, 
                 )
     print("All finished")
