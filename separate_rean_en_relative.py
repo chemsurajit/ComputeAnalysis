@@ -14,7 +14,7 @@ def get_arguments():
         description="Extract the relative reaction energies."
     )
     parser.add_argument(
-        "-csv_directory", "--csv_directory",
+        "-csv_dir", "--csv_dir",
         type=str,
         required=True,
         help="Directory where all the CSV files are saved."
@@ -40,7 +40,7 @@ def save_relative_csv_for_functionals(csv_files, g4mp2_csv, dft_functional_names
     for func in dft_functional_names:
         func_dfs = []
         for csv_file in csv_files:
-            for chunk in pd.read_csv(csv_file, usecols=["index", func]):
+            for chunk in pd.read_csv(csv_file, usecols=[func]):
                 func_dfs.append(chunk)
             break
         break
