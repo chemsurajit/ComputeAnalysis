@@ -40,7 +40,7 @@ def save_relative_csv_for_functionals(csv_files, g4mp2_csv, dft_functional_names
     for func in dft_functional_names:
         func_dfs = []
         for csv_file in csv_files:
-            for chunk in pd.read_csv(csv_file, usecols=[func]):
+            for chunk in pd.read_csv(csv_file, chunksize=chunksize, usecols=[func]):
                 func_dfs.append(chunk)
             break
         break
