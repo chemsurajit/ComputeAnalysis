@@ -1,8 +1,9 @@
 import argparse
 from chunk import Chunk
-import os
+import os,sys
 import pandas as pd
 import numpy as np
+import re
 
 
 def get_arguments():
@@ -149,16 +150,18 @@ def save_to_txt_file(out_dir, csv_files, columns_to_read, nbins=None):
         print("Analysis complete for file: ", csv_file)
     # Now saving the results to txt files
     print("Now saving the results to txt files.")
+    print("Any special characters in the file name string will be replaced with _")
     for column in columns_to_read:
-        count_file = column + "_counts.txt"
-        binedges_file = column + "_binedges.txt"
+        column_mod = re.sub("[^0-9a-zA-Z]+", "_", column)
+        count_file = column_mod + "_counts.txt"
+        binedges_file = column_mod + "_binedges.txt"
         np.savetxt(count_file, counts_dict[column], fmt="%d")
         np.savetxt(binedges_file, bin_edges_dict[column], fmt="%f")
     print("Saving file is completed.")
     return
 
 
-def save_reaction_histogram(out_dir, csv_files, dft_functional_names):
+def save_reaction_histogram(out_dir, csv_files, dft_functional_names, nbins=None):
     """
     This is the main function which will save the histogram analysis of the dft functionals names.
     """
@@ -170,18 +173,30 @@ def save_reaction_histogram(out_dir, csv_files, dft_functional_names):
             columns_to_read += [functional+"_TZP", functional+"_DZP", functional+"_SZ"]
     print("The following columns will be analysed: ")
     print(*columns_to_read, sep="\n")
-    save_to_txt_file(out_dir, csv_files, columns_to_read)
+    save_to_txt_file(out_dir, csv_files, columns_to_read, nbins)
     return
 
+
+def get_func_names(csvfile):
+    """Function to collect functional names from csv file using the *_TZP match
+    """
+    func_names = []
+    small_cont = pd.read_csv(csvfile, nrows=10)
+    for col in small_cont.columns:
+        if "_TZP" in col:
+            func_names.append(col[:-4])
+    print("Functional names:")
+    print(*func_names, sep='\n')
+    return func_names
 
 def main():
     nbins = 50
     args = get_arguments()
-    dft_functional_names = ["PBE", "BLYP", "BP", "TPSSH", "B3LYP(VWN5)", "M06-2X", "MPW1PW", "GFNXTB"]
     csv_files = get_csv_files(args.csv_directory)
     if args.g4mp2:
         save_reaction_histogram_g4mp2(args.out_dir, csv_files, nbins=nbins)
     else:
+        dft_functional_names = get_func_names(csv_files[0]) # get all the functional names from one csv file
         save_reaction_histogram(args.out_dir, csv_files, dft_functional_names, nbins=nbins)
     print("All finished")
     return
